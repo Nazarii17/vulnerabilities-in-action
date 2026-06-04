@@ -1,0 +1,45 @@
+name: SAST - Semgrep
+description: 'Runs Semgrep security analysis and uploads SARIF'
+
+inputs:
+  source-dir:
+    description: 'Directory to scan'
+    required: false
+    default: 'via-backend/src'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run Semgrep
+      shell: bash
+      run: |
+        python -m pip install semgrep
+        semgrep scan \
+          --sarif --output semgrep.sarif \
+          --config "p/security-audit" \
+          --config "p/owasp-top-ten" \
+          --config "p/cwe-top-25" \
+          --config "p/java" \
+          ${{ inputs.source-dir }}
+      env:
+        SEMGREP_APP_TOKEN: ""
+      continue-on-error: true
+
+    - name: Debug - Check generated files
+      if: always()
+      shell: bash
+      run: |
+        echo "=== Checking for Semgrep output files ==="
+        ls -la . | grep -i semgrep || echo "No semgrep files in root"
+        find . -maxdepth 2 -name "*semgrep*" 2>/dev/null || echo "No semgrep files found"
+        echo ""
+        echo "=== Checking for SARIF files ==="
+        find . -name "*.sarif" 2>/dev/null || echo "No SARIF files found"
+
+    - name: Upload SARIF file
+      if: always() && hashFiles('semgrep.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v4
+      with:
+        sarif_file: semgrep.sarif
+        category: Semgrep
+

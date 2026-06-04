@@ -1,0 +1,33 @@
+name: SAST - GitHub CodeQL
+description: 'Runs GitHub CodeQL analysis for security scanning'
+
+inputs:
+  language:
+    description: 'Language to analyze'
+    required: false
+    default: 'java'
+  project-dir:
+    description: 'Project directory'
+    required: false
+    default: 'via-backend'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v4
+      with:
+        languages: ${{ inputs.language }}
+        queries: security-and-quality
+
+    - name: Build Java project
+      shell: bash
+      run: |
+        cd ${{ inputs.project-dir }}
+        mvn clean compile -DskipTests
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v4
+      with:
+        category: /language:${{ inputs.language }}
+

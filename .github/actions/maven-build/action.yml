@@ -1,0 +1,40 @@
+name: Maven Build & Test
+description: 'Builds Java project with Maven and runs tests'
+
+inputs:
+  skip-tests:
+    description: 'Skip test execution'
+    required: false
+    default: 'false'
+  project-dir:
+    description: 'Project directory'
+    required: false
+    default: 'via-backend'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Build with Maven
+      shell: bash
+      run: |
+        cd ${{ inputs.project-dir }}
+        if [ "${{ inputs.skip-tests }}" = "true" ]; then
+          mvn clean package -DskipTests
+        else
+          mvn clean package
+        fi
+
+    - name: Run tests
+      if: inputs.skip-tests == 'false'
+      shell: bash
+      run: |
+        cd ${{ inputs.project-dir }}
+        mvn test
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts
+        path: ${{ inputs.project-dir }}/target/*.jar
+        retention-days: 5
+

@@ -1,0 +1,46 @@
+name: SAST - SpotBugs & FindSecBugs
+description: 'Runs SpotBugs with FindSecBugs plugin for security scanning'
+
+inputs:
+  project-dir:
+    description: 'Project directory'
+    required: false
+    default: 'via-backend'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run SpotBugs with FindSecBugs
+      shell: bash
+      run: |
+        cd ${{ inputs.project-dir }}
+        mvn clean compile spotbugs:spotbugs
+      continue-on-error: true
+
+    - name: Debug - Check generated files
+      if: always()
+      shell: bash
+      run: |
+        echo "=== Checking for SpotBugs report files ==="
+        cd ${{ inputs.project-dir }}/target
+        ls -lh . | grep -i spot || echo "No spotbugs files found"
+        find . -name "*spotbugs*" -o -name "*spot*" 2>/dev/null || echo "No spotbugs files in find"
+
+    - name: Upload SpotBugs XML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: spotbugs-report-xml
+        path: ${{ inputs.project-dir }}/target/spotbugsXml.xml
+        retention-days: 30
+        if-no-files-found: warn
+
+    - name: Upload SpotBugs HTML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: spotbugs-report-html
+        path: ${{ inputs.project-dir }}/target/spotbugs.html
+        retention-days: 30
+        if-no-files-found: warn
+

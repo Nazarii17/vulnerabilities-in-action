@@ -1,0 +1,22 @@
+name: Setup Java & Maven Environment
+description: 'Sets up Java 25 (Temurin) and Maven with caching'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Display versions
+      shell: bash
+      run: |
+        echo "Java version:"
+        java -version
+        echo ""
+        echo "Maven version:"
+        mvn -v
+
