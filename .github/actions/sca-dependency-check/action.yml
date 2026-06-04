@@ -6,6 +6,9 @@ inputs:
     description: 'Project directory'
     required: false
     default: 'via-backend'
+  nvd-api-key:
+    description: 'NVD API Key for authentication'
+    required: false
 
 runs:
   using: 'composite'
@@ -17,14 +20,14 @@ runs:
         echo "Starting OWASP Dependency-Check scan..."        
         
         MAVEN_CMD="mvn dependency-check:check -DdependencyCheck.skip=false -DconnectionTimeout=60000 -DreadTimeout=60000"
-        if [ -n "${NVD_API_KEY}" ]; then
+        
+        if [ -n "${{ inputs.nvd-api-key }}" ]; then
           echo "🔑 Using NVD API Key for authentication"
-          MAVEN_CMD="$MAVEN_CMD -DnvdApiKey=${NVD_API_KEY}"
+          MAVEN_CMD="$MAVEN_CMD -DnvdApiKey=${{ inputs.nvd-api-key }}"
         else
           echo "⚠️ No NVD API Key found! Scan will likely fail with 403 in GitHub Actions."
         fi
         
-        # Try to run the scan with retries for NVD API
         for attempt in 1 2 3; do
           echo "Attempt $attempt: Running dependency-check..."
           if eval $MAVEN_CMD; then
