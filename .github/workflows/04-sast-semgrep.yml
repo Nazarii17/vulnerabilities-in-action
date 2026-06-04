@@ -25,7 +25,6 @@ jobs:
       uses: returntocorp/semgrep-action@v1
       with:
         generateSarif: true
-        generateJson: true
         config: >-
           p/security-audit
           p/owasp-top-ten
@@ -33,21 +32,22 @@ jobs:
           p/java
         scanDirFilter: via-backend/src
 
-    - name: Upload SARIF file
+    - name: Debug - Check generated files
       if: always()
-      uses: github/codeql-action/upload-sarif@v3
+      run: |
+        echo "=== Checking for Semgrep output files ==="
+        ls -la . | grep -i semgrep || echo "No semgrep files in root"
+        find . -maxdepth 2 -name "*semgrep*" 2>/dev/null || echo "No semgrep files found"
+        echo ""
+        echo "=== Checking for SARIF files ==="
+        find . -name "*.sarif" 2>/dev/null || echo "No SARIF files found"
+
+    - name: Upload SARIF file
+      if: always() && hashFiles('semgrep.sarif') != ''
+      uses: github/codeql-action/upload-sarif@v4
       with:
         sarif_file: semgrep.sarif
         category: Semgrep
-
-    - name: Upload JSON report
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: semgrep-report-json
-        path: semgrep.json
-        retention-days: 30
-        if-no-files-found: warn
 
     - name: Summary - Semgrep Results
       if: always()
@@ -59,12 +59,16 @@ jobs:
         echo "- **Language**: Java" >> $GITHUB_STEP_SUMMARY
         echo "- **Rule Sets**: Security Audit, OWASP Top 10, CWE Top 25" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Report Formats" >> $GITHUB_STEP_SUMMARY
-        echo "- **SARIF**: Uploaded to GitHub Security → Code scanning" >> $GITHUB_STEP_SUMMARY
-        echo "- **JSON**: Available in Artifacts for detailed analysis" >> $GITHUB_STEP_SUMMARY
+        echo "### Report" >> $GITHUB_STEP_SUMMARY
+        if [ -f semgrep.sarif ]; then
+          echo "- **SARIF**: ✅ Generated and uploaded to GitHub" >> $GITHUB_STEP_SUMMARY
+          ISSUES=$(grep -c '"ruleId"' semgrep.sarif 2>/dev/null || echo "0")
+          echo "- **Total Issues**: $ISSUES" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Status**: SARIF not generated (may indicate no issues found or configuration issue)" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### How to View Results" >> $GITHUB_STEP_SUMMARY
         echo "1. **GitHub Security Tab**: Repository → Security → Code scanning" >> $GITHUB_STEP_SUMMARY
-        echo "2. **Artifacts**: Download semgrep-report-json for detailed findings" >> $GITHUB_STEP_SUMMARY
-        echo "3. **Workflow Logs**: Check logs for detailed output" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Workflow Logs**: Check logs for detailed output" >> $GITHUB_STEP_SUMMARY
 
