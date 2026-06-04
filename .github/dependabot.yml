@@ -1,0 +1,86 @@
+version: 2
+
+updates:
+  # Maven dependencies (Java/Spring Boot)
+  - package-ecosystem: "maven"
+    directory: "/via-backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "03:00"
+    open-pull-requests-limit: 10
+    pull-request-branch-name:
+      separator: "/"
+    reviewers:
+      - "dependabot"
+    labels:
+      - "dependencies"
+      - "java"
+    commit-message:
+      prefix: "chore"
+      prefix-scope: "deps"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore demo vulnerable dependencies - intentionally kept for SCA demo
+      - dependency-name: "org.apache.logging.log4j:log4j-core"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+#      - dependency-name: "org.apache.commons:commons-text"
+#        update-types:
+#          - "version-update:semver-minor"
+#          - "version-update:semver-patch"
+      - dependency-name: "commons-collections:commons-collections"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    rebase-strategy: "auto"
+    target-branch: "develop"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    pull-request-branch-name:
+      separator: "/"
+    reviewers:
+      - "dependabot"
+    labels:
+      - "ci-cd"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    allow:
+      - dependency-type: "direct"
+    rebase-strategy: "auto"
+    target-branch: "develop"
+
+  # Docker (if using containers)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "04:00"
+    open-pull-requests-limit: 5
+    pull-request-branch-name:
+      separator: "/"
+    reviewers:
+      - "dependabot"
+    labels:
+      - "docker"
+      - "dependencies"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    rebase-strategy: "auto"
+    target-branch: "develop"
+
