@@ -150,16 +150,11 @@
                 </executions>
             </plugin>
 
-            <!-- ============================================================
-                 SpotBugs + FindSecBugs — SAST Security Scanner
-                 Finds security bugs and potential vulnerabilities
-                 ============================================================ -->
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.8.5.0</version>
+                <version>4.9.8.3</version>
                 <dependencies>
-                    <!-- Include FindSecBugs plugin for security checks -->
                     <dependency>
                         <groupId>com.h3xstream.findsecbugs</groupId>
                         <artifactId>findsecbugs-plugin</artifactId>
@@ -167,18 +162,17 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <!-- Analysis parameters -->
                     <effort>max</effort>
                     <threshold>medium</threshold>
                     <outputEncoding>UTF-8</outputEncoding>
-                    <!-- Generate XML and HTML reports -->
                     <xmlOutput>true</xmlOutput>
                     <htmlOutput>true</htmlOutput>
                     <outputDirectory>${project.build.directory}</outputDirectory>
+                    <maxHeap>2048</maxHeap>
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>compile</phase>
+                        <phase>verify</phase>
                         <goals>
                             <goal>spotbugs</goal>
                         </goals>
