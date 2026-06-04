@@ -192,6 +192,9 @@
                     <skip>false</skip>
                     <enableExperimental>true</enableExperimental>
                     <enableRetired>true</enableRetired>
+                    <!-- NVD API Configuration for reliability -->
+                    <connectionTimeout>60000</connectionTimeout>
+                    <readTimeout>60000</readTimeout>
                 </configuration>
                 <executions>
                     <execution>

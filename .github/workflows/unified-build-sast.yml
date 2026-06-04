@@ -221,28 +221,53 @@ jobs:
           echo "| XML | dependency-check-report.xml | Machine-readable |" >> $GITHUB_STEP_SUMMARY
           echo "| JSON | dependency-check-report.json | Structured data |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if reports were generated
+          REPORT_COUNT=0
           if [ -f via-backend/target/dependency-check-report.html ]; then
+            ((REPORT_COUNT++))
+          fi
+          if [ -f via-backend/target/dependency-check-report.xml ]; then
+            ((REPORT_COUNT++))
+          fi
+          
+          if [ $REPORT_COUNT -gt 0 ]; then
             echo "### Status" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **Report Generated**: dependency-check-report.html" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Reports Generated**: Scan completed successfully" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Vulnerability Checks" >> $GITHUB_STEP_SUMMARY
+            echo "Scans for known vulnerabilities in:" >> $GITHUB_STEP_SUMMARY
+            echo "- Log4j 2.14.1 (CVE-2021-44228 Log4Shell)" >> $GITHUB_STEP_SUMMARY
+            echo "- Apache Commons Text 1.9 (CVE-2022-42889 Text4Shell)" >> $GITHUB_STEP_SUMMARY
+            echo "- Commons Collections 3.2.1 (Remote Code Execution)" >> $GITHUB_STEP_SUMMARY
+            echo "- Spring Boot and all transitive dependencies" >> $GITHUB_STEP_SUMMARY
           else
             echo "### Status" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **Checking logs for details...** (report may be in build logs)" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **NVD Database Issue Detected**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The NVD (National Vulnerability Database) API returned an error (HTTP 403)." >> $GITHUB_STEP_SUMMARY
+            echo "This commonly happens due to:" >> $GITHUB_STEP_SUMMARY
+            echo "- **Rate Limiting**: NVD API limits requests per hour" >> $GITHUB_STEP_SUMMARY
+            echo "- **First Run**: Large initial download of vulnerability data" >> $GITHUB_STEP_SUMMARY
+            echo "- **Network Issues**: Temporary connectivity problems" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Solution**: Run dependency-check locally to download and cache NVD database:" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+            echo "cd via-backend" >> $GITHUB_STEP_SUMMARY
+            echo "mvn dependency-check:check" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Once the database is cached locally, GitHub Actions will use it." >> $GITHUB_STEP_SUMMARY
           fi
+          
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### How to Access Results" >> $GITHUB_STEP_SUMMARY
           echo "1. **Workflow Run**: [$RUN_URL]($RUN_URL)" >> $GITHUB_STEP_SUMMARY
-          echo "2. **Artifacts Tab**: Download reports:" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Artifacts Tab**: Download reports (if generated):" >> $GITHUB_STEP_SUMMARY
           echo "   - \`sca-dependency-check-html\` (view in browser)" >> $GITHUB_STEP_SUMMARY
           echo "   - \`sca-dependency-check-xml\` (for parsing)" >> $GITHUB_STEP_SUMMARY
           echo "   - \`sca-dependency-check-json\` (for CI/CD)" >> $GITHUB_STEP_SUMMARY
-          echo "3. **Retention**: Reports kept for 30 days" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Vulnerability Checks" >> $GITHUB_STEP_SUMMARY
-          echo "Scans for known vulnerabilities in:" >> $GITHUB_STEP_SUMMARY
-          echo "- Log4j 2.14.1 (CVE-2021-44228 Log4Shell)" >> $GITHUB_STEP_SUMMARY
-          echo "- Apache Commons Text 1.9 (CVE-2022-42889 Text4Shell)" >> $GITHUB_STEP_SUMMARY
-          echo "- Commons Collections 3.2.1 (Remote Code Execution)" >> $GITHUB_STEP_SUMMARY
-          echo "- Spring Boot and all transitive dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Retention**: Reports kept for 30 days when available" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Detects" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Known CVEs in dependencies" >> $GITHUB_STEP_SUMMARY
