@@ -293,13 +293,18 @@ jobs:
       - name: Setup Java & Maven
         uses: ./.github/actions/setup-java-maven
 
+      # 1. Встановлюємо нативний Snyk CLI
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@master
+
+      # 2. Запускаємо сканування вручну
       - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/maven@master
-        continue-on-error: true
+        # continue-on-error: true # Розкоментуй, щоб пайплайн світився зеленим
+        run: |
+          # Параметр --command=mvn змушує Snyk ігнорувати битий mvnw і використовувати нормальний Maven
+          snyk test --all-projects --sarif-file-output=snyk.sarif --command=mvn
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --sarif-file-output=snyk.sarif --all-projects
 
       - name: Upload Snyk report to GitHub Security
         if: always()
@@ -312,9 +317,9 @@ jobs:
         if: always()
         run: |
           echo "## 🐶 Snyk SCA Analysis Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tool**: Snyk Open Source" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tool**: Snyk Open Source (CLI)" >> $GITHUB_STEP_SUMMARY
           echo "- **Speed**: ⚡ Ultra-fast (Cloud-based resolution)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Report**: SARIF generated and uploaded to GitHub Security Tab" >> $GITHUB_STEP_SUMMARY
+          echo "- **Report**: ✅ SARIF generated and uploaded to GitHub Security Tab" >> $GITHUB_STEP_SUMMARY
   # ============ UNIFIED REPORT ============
   generate-report:
     needs: [build, spotbugs-scan, codeql-scan, semgrep-scan, sca-scan]
