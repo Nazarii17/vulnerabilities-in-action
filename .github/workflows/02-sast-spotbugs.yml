@@ -57,20 +57,44 @@ jobs:
     - name: Summary - SAST Scan Results
       if: always()
       run: |
+        RUN_ID="${{ github.run_id }}"
+        REPO="${{ github.repository }}"
+        RUN_URL="${{ github.server_url }}/$REPO/actions/runs/$RUN_ID"
+        
         echo "## 🔍 SAST Scan Results (SpotBugs + FindSecBugs)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+        echo "### Scanner Configuration" >> $GITHUB_STEP_SUMMARY
         echo "- **Scanner**: SpotBugs 4.8.5.0 + FindSecBugs 1.13.0" >> $GITHUB_STEP_SUMMARY
-        echo "- **Effort Level**: max" >> $GITHUB_STEP_SUMMARY
-        echo "- **Threshold**: medium" >> $GITHUB_STEP_SUMMARY
+        echo "- **Effort Level**: max (most thorough)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Threshold**: medium and above" >> $GITHUB_STEP_SUMMARY
+        echo "- **Java Version**: 25" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Report" >> $GITHUB_STEP_SUMMARY
+        echo "### Report Formats" >> $GITHUB_STEP_SUMMARY
+        echo "| Format | Location | Type |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|----------|------|" >> $GITHUB_STEP_SUMMARY
+        echo "| XML | Artifacts | Machine-readable |" >> $GITHUB_STEP_SUMMARY
+        echo "| HTML | Artifacts | Human-readable (viewable in browser) |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         if [ -f via-backend/target/spotbugsXml.xml ]; then
           ISSUES=$(grep -c "<BugInstance" via-backend/target/spotbugsXml.xml 2>/dev/null || echo "0")
+          echo "### Findings Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Total Issues Found**: $ISSUES" >> $GITHUB_STEP_SUMMARY
-          echo "- **Report Path**: \`via-backend/target/spotbugsXml.xml\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Download**: Check Artifacts tab" >> $GITHUB_STEP_SUMMARY
+          echo "- **Report Location**: Artifacts tab → \`spotbugs-report-xml\` or \`spotbugs-report-html\`" >> $GITHUB_STEP_SUMMARY
         else
-          echo "- **Status**: Report not generated" >> $GITHUB_STEP_SUMMARY
+          echo "### Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Report**: Not generated (check build errors)" >> $GITHUB_STEP_SUMMARY
         fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### How to Access Results" >> $GITHUB_STEP_SUMMARY
+        echo "1. **Workflow Run**: [$RUN_URL]($RUN_URL)" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Artifacts Tab**: Download \`spotbugs-report-html\` for interactive view" >> $GITHUB_STEP_SUMMARY
+        echo "3. **Retention**: Reports kept for 30 days" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Detects" >> $GITHUB_STEP_SUMMARY
+        echo "- Hardcoded Secrets (CWE-798)" >> $GITHUB_STEP_SUMMARY
+        echo "- SQL Injection patterns (CWE-89)" >> $GITHUB_STEP_SUMMARY
+        echo "- Command Injection patterns (CWE-78)" >> $GITHUB_STEP_SUMMARY
+        echo "- Path Traversal (CWE-22)" >> $GITHUB_STEP_SUMMARY
+        echo "- XSS patterns (CWE-79)" >> $GITHUB_STEP_SUMMARY
+        echo "- Weak Cryptography and 100+ more patterns" >> $GITHUB_STEP_SUMMARY
 

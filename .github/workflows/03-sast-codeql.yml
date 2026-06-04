@@ -52,20 +52,49 @@ jobs:
     - name: Summary - CodeQL Results
       if: always()
       run: |
+        REPO="${{ github.repository }}"
+        REPO_URL="${{ github.server_url }}/$REPO"
+        SECURITY_URL="$REPO_URL/security/code-scanning"
+        
         echo "## 🔐 CodeQL SAST Analysis Results" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+        echo "### Scanner Configuration" >> $GITHUB_STEP_SUMMARY
         echo "- **Tool**: GitHub Advanced Security - CodeQL" >> $GITHUB_STEP_SUMMARY
         echo "- **Language**: Java" >> $GITHUB_STEP_SUMMARY
         echo "- **Query Suite**: security-and-quality" >> $GITHUB_STEP_SUMMARY
+        echo "- **Analysis Depth**: Deep (taint-flow based)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Report Location" >> $GITHUB_STEP_SUMMARY
-        echo "- **GitHub Security Tab**: Can be found at \`/security/code-scanning\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **SARIF Format**: Automatically uploaded to GitHub" >> $GITHUB_STEP_SUMMARY
+        echo "- **GitHub Security Tab**: [$SECURITY_URL]($SECURITY_URL)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Format**: SARIF (Automatically uploaded to GitHub)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Results**: Interactive alerts with code snippets" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### How to View Results" >> $GITHUB_STEP_SUMMARY
-        echo "1. Go to repository **Security** tab" >> $GITHUB_STEP_SUMMARY
+        echo "1. Go to: [$REPO_URL/security]($REPO_URL/security)" >> $GITHUB_STEP_SUMMARY
         echo "2. Click **Code scanning** (left sidebar)" >> $GITHUB_STEP_SUMMARY
-        echo "3. View alerts by severity (Critical, High, Medium, Low)" >> $GITHUB_STEP_SUMMARY
-        echo "4. Each alert links to the vulnerable code with fix suggestions" >> $GITHUB_STEP_SUMMARY
+        echo "3. View alerts grouped by:" >> $GITHUB_STEP_SUMMARY
+        echo "   - 🔴 **Critical** - Must fix immediately" >> $GITHUB_STEP_SUMMARY
+        echo "   - 🟠 **High** - Fix before deployment" >> $GITHUB_STEP_SUMMARY
+        echo "   - 🟡 **Medium** - Should fix soon" >> $GITHUB_STEP_SUMMARY
+        echo "   - 🔵 **Low** - Consider fixing" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Each Alert Provides" >> $GITHUB_STEP_SUMMARY
+        echo "- **Location**: File and line number" >> $GITHUB_STEP_SUMMARY
+        echo "- **Code Snippet**: Vulnerable code highlighted" >> $GITHUB_STEP_SUMMARY
+        echo "- **CWE Reference**: Common Weakness Enumeration ID" >> $GITHUB_STEP_SUMMARY
+        echo "- **Description**: What's wrong and why" >> $GITHUB_STEP_SUMMARY
+        echo "- **Suggestion**: How to fix it" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Detects" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ SQL Injection (CWE-89)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Command Injection (CWE-78)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Path Traversal (CWE-22)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ XSS (CWE-79)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Hardcoded Secrets (CWE-798)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ OWASP Top 10 patterns" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Triggers" >> $GITHUB_STEP_SUMMARY
+        echo "- Push to main/develop branches" >> $GITHUB_STEP_SUMMARY
+        echo "- Every pull request" >> $GITHUB_STEP_SUMMARY
+        echo "- Weekly schedule (Monday 2 AM UTC)" >> $GITHUB_STEP_SUMMARY
 

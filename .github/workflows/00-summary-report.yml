@@ -101,6 +101,12 @@ jobs:
     - name: Generate Unified Report
       if: always()
       run: |
+        # Get timestamp
+        TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+        REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+        RUN_ID="${{ github.run_id }}"
+        RUN_URL="$REPO_URL/actions/runs/$RUN_ID"
+        
         cat > /tmp/summary.md << 'EOF'
         # 📋 Security & Build Summary Report
         
@@ -121,81 +127,137 @@ jobs:
         
         > 📝 **Note**: Test metrics available in complete workflow run details
         
-        ## 🔍 Security Scanning - SpotBugs Findings
+        ## 🔍 SAST Security Scanning Results
         
-        The SpotBugs + FindSecBugs SAST scan is executed in this pipeline.
-        
+        ### SpotBugs + FindSecBugs
         **To view detailed results:**
-        1. Go to **Artifacts** tab → Download **spotbugs-report-xml** or **spotbugs-report-html**
-        2. Or check workflow logs for counts by severity
+        1. Go to **Workflow Run** → **Artifacts** tab
+        2. Download **spotbugs-report-xml** (machine-readable)
+        3. Download **spotbugs-report-html** (viewable in browser)
+        4. Or check workflow logs for counts by severity
         
-        | Component | Status |
-        |-----------|--------|
-        | SpotBugs Report (XML) | ✅ Generated |
-        | SpotBugs Report (HTML) | ✅ Generated |
-        | FindSecBugs Plugin | ✅ Enabled |
-        
-        ## 🔐 Additional Security Scans
+        | Component | Status | Location |
+        |-----------|--------|----------|
+        | SpotBugs Report (XML) | ✅ Generated | Artifacts |
+        | SpotBugs Report (HTML) | ✅ Generated | Artifacts |
+        | FindSecBugs Plugin | ✅ Enabled | SpotBugs config |
         
         ### CodeQL SARIF Analysis
-        - **Binary**: ✅ Uploaded to GitHub
         - **Location**: Security → Code scanning tab
+        - **URL**: [$REPO_URL/security/code-scanning]($REPO_URL/security/code-scanning)
         - **Query Suite**: security-and-quality
         - **Languages**: Java
+        - **Results**: See GitHub Security tab for interactive alerts
         
-        ### SpotBugs Detailed Report
-        - **XML Report**: Available in Artifacts
-        - **HTML Report**: Available in Artifacts  
-        - **Effort Level**: max
-        - **Threshold**: medium and above
+        ### Semgrep Analysis
+        - **Location**: Security → Code scanning tab
+        - **URL**: [$REPO_URL/security/code-scanning]($REPO_URL/security/code-scanning)
+        - **Rule Sets**: Security Audit, OWASP Top 10, CWE Top 25
+        - **Results**: Merged with CodeQL results in Security tab
         
-        ## 🎯 Vulnerable Endpoints (Demo Intentional - Has Secure Fixes)
+        ## 🎯 Vulnerable Endpoints (Demo - Intentional with Secure Fixes)
         
-        | Endpoint | Vulnerability | CWE | Secure Endpoint |
+        | Endpoint | Vulnerability | CWE | Description |
         |----------|---|---|---|
-        | `/api/demo/sql/vulnerable` | SQL Injection | CWE-89 | `/api/demo/sql/secure` |
-        | `/api/demo/xss/vulnerable` | Cross-Site Scripting | CWE-79 | `/api/demo/xss/secure` |
-        | `/api/demo/cmd/vulnerable` | Command Injection | CWE-78 | `/api/demo/cmd/secure` |
-        | `/api/demo/path/vulnerable` | Path Traversal | CWE-22 | `/api/demo/path/secure` |
-        | `/api/demo/secrets/vulnerable` | Hardcoded Secrets | CWE-798 | `/api/demo/secrets/secure` |
-        | `/actuator/*` | Actuator Misconfiguration | CWE-200 | See `application.yaml` |
+        | `/api/demo/sql/vulnerable` | SQL Injection | 89 | Unsafe string concatenation |
+        | `/api/demo/sql/secure` | ✅ FIXED | 89 | Parameterized query |
+        | `/api/demo/xss/vulnerable` | Cross-Site Scripting | 79 | Raw HTML reflection |
+        | `/api/demo/xss/secure` | ✅ FIXED | 79 | HTML entity encoding |
+        | `/api/demo/cmd/vulnerable` | Command Injection | 78 | Runtime.exec() with unsanitized input |
+        | `/api/demo/cmd/secure` | ✅ FIXED | 78 | Array exec + input validation |
+        | `/api/demo/path/vulnerable` | Path Traversal | 22 | Unsafe path concatenation |
+        | `/api/demo/path/secure` | ✅ FIXED | 22 | Path normalization & containment check |
+        | `/api/demo/secrets/vulnerable` | Hardcoded Secrets | 798 | Credentials in source code |
+        | `/api/demo/secrets/secure` | ✅ FIXED | 798 | Environment variables |
+        | `/actuator/*` | Actuator Misconfiguration | 200 | All endpoints exposed |
+        | `/h2-console` | ⚠️ DEMO ONLY | N/A | H2 database console |
         
-        ## 📊 Access Scan Results
+        ## 📊 How to Access Reports
         
-        ### For Pull Requests
-        - ✅ Workflow checks appear in PR status
-        - ✅ CodeQL alerts shown if found
-        - ✅ SpotBugs summary in workflow logs
+        ### GitHub Security Tab
+        1. Go to: [$REPO_URL/security]($REPO_URL/security)
+        2. Click **Code scanning** (left sidebar)
+        3. View alerts by severity (Critical, High, Medium, Low)
+        4. Each alert shows:
+           - Vulnerable code snippet
+           - CWE reference
+           - Suggested fix
+           - Severity level
         
-        ### For Main Branch
-        1. **GitHub Security Tab**: Repository → Security → Code scanning
-        2. **Artifacts**: Workflow run → Artifacts → Download reports
-        3. **Actions Logs**: Workflow run → Logs tab
+        ### Build Artifacts
+        1. Go to: [$RUN_URL]($RUN_URL)
+        2. Scroll to **Artifacts** section
+        3. Download:
+           - `build-artifacts` → JAR files
+           - `spotbugs-report-xml` → XML findings
+           - `spotbugs-report-html` → HTML viewer
         
-        ## 📚 Documentation
+        ### Workflow Logs
+        1. Go to: [$RUN_URL]($RUN_URL)
+        2. Expand each step to see detailed output
+        3. Steps with results:
+           - 02-sast-spotbugs.yml → Counts by severity
+           - 03-sast-codeql.yml → Analysis progress
+           - 04-sast-semgrep.yml → Rules applied
+        
+        ## 🚀 CI/CD Pipeline Flow
+        
+        ```
+        Push/PR to main/develop
+                 ↓
+        01-build.yml (2-3 min)
+        ├─ Maven: clean compile package test
+        ├─ Generate JAR artifacts
+        └─ Upload for 5 days
+                 ↓
+        02-sast-spotbugs.yml (2 min)
+        ├─ SpotBugs 4.8.5 + FindSecBugs 1.13
+        ├─ Generate XML + HTML reports
+        └─ Upload for 30 days
+                 ↓
+        03-sast-codeql.yml (5-8 min)
+        ├─ CodeQL security-and-quality suite
+        ├─ Auto-upload SARIF to Security tab
+        └─ Weekly + push/PR triggers
+                 ↓
+        04-sast-semgrep.yml (1 min)
+        ├─ Semgrep p/security-audit, OWASP, CWE
+        ├─ Auto-upload SARIF to Security tab
+        └─ Weekly + push/PR triggers
+                 ↓
+        00-summary-report.yml (1 min)
+        └─ Generate consolidated report
+        
+        Total Pipeline Time: ~12-20 minutes
+        ```
+        
+        ## 📚 Documentation & Tools
+        
+        ### Tools Used
+        - **Build**: Apache Maven 3.9+
+        - **SAST**: SpotBugs 4.8.5, CodeQL, Semgrep
+        - **Database**: H2 (in-memory demo)
+        - **Framework**: Spring Boot 4.0.6
+        
+        ### Additional Resources
         - [Build & Test Setup](../docs/BUILD-SETUP.md)
         - [SAST with SpotBugs](../docs/SAST-SETUP.md)
         - [CodeQL Setup](../docs/CODEQL-SETUP.md)
+        - [Semgrep Setup](../docs/SEMGREP-SETUP.md)
         - [Workflow Validation](../docs/WORKFLOW-VALIDATION.md)
-        
-        ## 🚀 CI/CD Pipeline Overview
-        
-        ```
-        Push/PR
-          ↓
-        01-build.yml (Maven compile + tests)
-          ↓
-        02-sast-spotbugs.yml (SpotBugs + FindSecBugs)
-          ↓
-        03-sast-codeql.yml (GitHub CodeQL → SARIF)
-          ↓
-        00-summary-report.yml (Consolidate results)
-        ```
+        - [Quick Start Guide](../docs/QUICK-START.md)
         
         ---
-        **Workflow Run**: [View on GitHub](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-        **Generated**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+        **Workflow Run**: [$RUN_URL]($RUN_URL)
+        **Repository**: [$REPO_URL]($REPO_URL)
+        **Generated**: $TIMESTAMP
+        **Status**: ✅ All scans completed
         EOF
+        
+        # Substitute variables in the output
+        sed -i "s|\$REPO_URL|$REPO_URL|g" /tmp/summary.md
+        sed -i "s|\$RUN_URL|$RUN_URL|g" /tmp/summary.md
+        sed -i "s|\$TIMESTAMP|$TIMESTAMP|g" /tmp/summary.md
         
         cat /tmp/summary.md >> $GITHUB_STEP_SUMMARY
         echo ""

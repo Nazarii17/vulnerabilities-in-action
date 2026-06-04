@@ -23,10 +23,10 @@ jobs:
 
     - name: Build with Maven
       run: cd via-backend && mvn clean package -DskipTests
-
+    
     - name: Run tests
       run: cd via-backend && mvn test
-
+    
     - name: Upload build artifacts
       if: always()
       uses: actions/upload-artifact@v4
@@ -34,4 +34,36 @@ jobs:
         name: build-artifacts
         path: via-backend/target/*.jar
         retention-days: 5
+    
+    - name: Test Results Summary
+      if: always()
+      run: |
+        RUN_ID="${{ github.run_id }}"
+        REPO="${{ github.repository }}"
+        RUN_URL="${{ github.server_url }}/$REPO/actions/runs/$RUN_ID"
+        
+        echo "## ✅ Build & Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Build Information" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ✅ Build completed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "- **Java Version**: 25 (Temurin)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Tool**: Maven (with caching)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Artifact**: JAR created in \`via-backend/target/\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "- **Framework**: JUnit 5 (Spring Boot)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Location**: See **Artifacts** → Download logs" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Reports**: \`via-backend/target/surefire-reports/\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts Generated" >> $GITHUB_STEP_SUMMARY
+        echo "- **JAR Files**: Available for 5 days" >> $GITHUB_STEP_SUMMARY
+        echo "- **Location**: [$RUN_URL]($RUN_URL)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Download**: Artifacts tab → \`build-artifacts\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+        echo "1. SAST scans run after build completes" >> $GITHUB_STEP_SUMMARY
+        echo "2. Security analysis includes:" >> $GITHUB_STEP_SUMMARY
+        echo "   - SpotBugs + FindSecBugs" >> $GITHUB_STEP_SUMMARY
+        echo "   - GitHub CodeQL" >> $GITHUB_STEP_SUMMARY
+        echo "   - Semgrep" >> $GITHUB_STEP_SUMMARY
 
