@@ -50,52 +50,52 @@ jobs:
           sarif_file: semgrep.sarif
           category: Semgrep
 
-       - name: Summary - Semgrep Results
-         if: always()
-         run: |
-           REPO="${{ github.repository }}"
-           REPO_URL="${{ github.server_url }}/$REPO"
-           SECURITY_URL="$REPO_URL/security/code-scanning"
-           
-           echo "## 🔍 Semgrep SAST Analysis Results" >> $GITHUB_STEP_SUMMARY
-           echo "" >> $GITHUB_STEP_SUMMARY
-           echo "### Scanner Configuration" >> $GITHUB_STEP_SUMMARY
-           echo "- **Tool**: Semgrep (free, open-source)" >> $GITHUB_STEP_SUMMARY
-           echo "- **Language**: Java" >> $GITHUB_STEP_SUMMARY
-           echo "- **Rule Sets**: Security Audit, OWASP Top 10, CWE Top 25" >> $GITHUB_STEP_SUMMARY
-           echo "- **Speed**: ⚡ Fast (1 minute)" >> $GITHUB_STEP_SUMMARY
-           echo "" >> $GITHUB_STEP_SUMMARY
-           echo "### Report Location" >> $GITHUB_STEP_SUMMARY
-           echo "- **GitHub Security Tab**: [$SECURITY_URL]($SECURITY_URL)" >> $GITHUB_STEP_SUMMARY
-           echo "- **Format**: SARIF (Automatically uploaded)" >> $GITHUB_STEP_SUMMARY
-           echo "- **Merged**: Results displayed alongside CodeQL findings" >> $GITHUB_STEP_SUMMARY
-           echo "" >> $GITHUB_STEP_SUMMARY
-           echo "### How to View Results" >> $GITHUB_STEP_SUMMARY
-           echo "1. Go to: [$REPO_URL/security]($REPO_URL/security)" >> $GITHUB_STEP_SUMMARY
-           echo "2. Click **Code scanning**" >> $GITHUB_STEP_SUMMARY
-           echo "3. Filter by **Semgrep** (if multiple tools show results)" >> $GITHUB_STEP_SUMMARY
-           echo "4. Each finding shows rule ID and severity" >> $GITHUB_STEP_SUMMARY
-           echo "" >> $GITHUB_STEP_SUMMARY
-           if [ -f semgrep.sarif ]; then
-             ISSUES=$(grep -c '"ruleId"' semgrep.sarif 2>/dev/null || echo "0")
-             echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
-             echo "- **SARIF Generated**: ✅ Yes" >> $GITHUB_STEP_SUMMARY
-             echo "- **Issues Found**: $ISSUES" >> $GITHUB_STEP_SUMMARY
-             echo "- **Status**: Successfully uploaded to GitHub" >> $GITHUB_STEP_SUMMARY
-           else
-             echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
-             echo "- **SARIF Generated**: ⚠️ Check build logs" >> $GITHUB_STEP_SUMMARY
-             echo "- **Possible Reasons**: No issues found or configuration issue" >> $GITHUB_STEP_SUMMARY
-           fi
-           echo "" >> $GITHUB_STEP_SUMMARY
-           echo "### Detects" >> $GITHUB_STEP_SUMMARY
-           echo "- Security Audit patterns (general security)" >> $GITHUB_STEP_SUMMARY
-           echo "- OWASP Top 10 vulnerabilities" >> $GITHUB_STEP_SUMMARY
-           echo "- CWE Top 25 issues" >> $GITHUB_STEP_SUMMARY
-           echo "- Java-specific security patterns" >> $GITHUB_STEP_SUMMARY
-           echo "" >> $GITHUB_STEP_SUMMARY
-           echo "### Advantages" >> $GITHUB_STEP_SUMMARY
-           echo "- ✅ Free and open-source" >> $GITHUB_STEP_SUMMARY
-           echo "- ✅ Very fast analysis (1 min)" >> $GITHUB_STEP_SUMMARY
-           echo "- ✅ No dependencies or accounts" >> $GITHUB_STEP_SUMMARY
-           echo "- ✅ High-quality rule sets" >> $GITHUB_STEP_SUMMARY
+      - name: Summary - Semgrep Results
+        if: always()
+        run: |
+          REPO="${{ github.repository }}"
+          REPO_URL="${{ github.server_url }}/$REPO"
+          SECURITY_URL="$REPO_URL/security/code-scanning"
+          
+          echo "## 🔍 Semgrep SAST Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scanner Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tool**: Semgrep (free, open-source)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Language**: Java" >> $GITHUB_STEP_SUMMARY
+          echo "- **Rule Sets**: Security Audit, OWASP Top 10, CWE Top 25" >> $GITHUB_STEP_SUMMARY
+          echo "- **Speed**: ⚡ Fast (1 minute)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Report Location" >> $GITHUB_STEP_SUMMARY
+          echo "- **GitHub Security Tab**: [$SECURITY_URL]($SECURITY_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format**: SARIF (Automatically uploaded)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Merged**: Results displayed alongside CodeQL findings" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### How to View Results" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to: [$REPO_URL/security]($REPO_URL/security)" >> $GITHUB_STEP_SUMMARY
+          echo "2. Click **Code scanning**" >> $GITHUB_STEP_SUMMARY
+          echo "3. Filter by **Semgrep** (if multiple tools show results)" >> $GITHUB_STEP_SUMMARY
+          echo "4. Each finding shows rule ID and severity" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f semgrep.sarif ]; then
+            ISSUES=$(grep -c '"ruleId"' semgrep.sarif 2>/dev/null || echo "0")
+            echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **SARIF Generated**: ✅ Yes" >> $GITHUB_STEP_SUMMARY
+            echo "- **Issues Found**: $ISSUES" >> $GITHUB_STEP_SUMMARY
+            echo "- **Status**: Successfully uploaded to GitHub" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "- **SARIF Generated**: ⚠️ Check build logs" >> $GITHUB_STEP_SUMMARY
+            echo "- **Possible Reasons**: No issues found or configuration issue" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Detects" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Audit patterns (general security)" >> $GITHUB_STEP_SUMMARY
+          echo "- OWASP Top 10 vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          echo "- CWE Top 25 issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Java-specific security patterns" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Advantages" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Free and open-source" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Very fast analysis (1 min)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ No dependencies or accounts" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ High-quality rule sets" >> $GITHUB_STEP_SUMMARY
