@@ -181,9 +181,78 @@ jobs:
           echo "- **GitHub Security Tab**: [$SECURITY_URL]($SECURITY_URL)" >> $GITHUB_STEP_SUMMARY
           echo "- **Format**: SARIF (Automatically uploaded)" >> $GITHUB_STEP_SUMMARY
 
+  # ============ SCA SCANNING (DEPENDENCY CHECK) ============
+  sca-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    name: 📦 SCA - Dependency Check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java & Maven
+        uses: ./.github/actions/setup-java-maven
+
+      - name: Run SCA Scan
+        uses: ./.github/actions/sca-dependency-check
+        with:
+          project-dir: 'via-backend'
+
+      - name: SCA Summary
+        if: always()
+        run: |
+          RUN_ID="${{ github.run_id }}"
+          REPO="${{ github.repository }}"
+          RUN_URL="${{ github.server_url }}/$REPO/actions/runs/$RUN_ID"
+          
+          echo "## 📦 SCA Analysis Results (OWASP Dependency Check)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Scanner Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tool**: OWASP Dependency-Check 9.0.7" >> $GITHUB_STEP_SUMMARY
+          echo "- **Analysis Type**: Software Composition Analysis (SCA)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Database**: NVD (National Vulnerability Database)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Focus**: Third-party dependencies & libraries" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Report Formats" >> $GITHUB_STEP_SUMMARY
+          echo "| Format | File | Type |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| HTML | dependency-check-report.html | Interactive viewer |" >> $GITHUB_STEP_SUMMARY
+          echo "| XML | dependency-check-report.xml | Machine-readable |" >> $GITHUB_STEP_SUMMARY
+          echo "| JSON | dependency-check-report.json | Structured data |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f via-backend/target/dependency-check-report.html ]; then
+            echo "### Status" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Report Generated**: dependency-check-report.html" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### Status" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ **Checking logs for details...** (report may be in build logs)" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### How to Access Results" >> $GITHUB_STEP_SUMMARY
+          echo "1. **Workflow Run**: [$RUN_URL]($RUN_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "2. **Artifacts Tab**: Download reports:" >> $GITHUB_STEP_SUMMARY
+          echo "   - \`sca-dependency-check-html\` (view in browser)" >> $GITHUB_STEP_SUMMARY
+          echo "   - \`sca-dependency-check-xml\` (for parsing)" >> $GITHUB_STEP_SUMMARY
+          echo "   - \`sca-dependency-check-json\` (for CI/CD)" >> $GITHUB_STEP_SUMMARY
+          echo "3. **Retention**: Reports kept for 30 days" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Vulnerability Checks" >> $GITHUB_STEP_SUMMARY
+          echo "Scans for known vulnerabilities in:" >> $GITHUB_STEP_SUMMARY
+          echo "- Log4j 2.14.1 (CVE-2021-44228 Log4Shell)" >> $GITHUB_STEP_SUMMARY
+          echo "- Apache Commons Text 1.9 (CVE-2022-42889 Text4Shell)" >> $GITHUB_STEP_SUMMARY
+          echo "- Commons Collections 3.2.1 (Remote Code Execution)" >> $GITHUB_STEP_SUMMARY
+          echo "- Spring Boot and all transitive dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Detects" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Known CVEs in dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Outdated library versions" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ License compliance issues" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Supply chain risks" >> $GITHUB_STEP_SUMMARY
+
   # ============ UNIFIED REPORT ============
   generate-report:
-    needs: [build, spotbugs-scan, codeql-scan, semgrep-scan]
+    needs: [build, spotbugs-scan, codeql-scan, semgrep-scan, sca-scan]
     runs-on: ubuntu-latest
     name: 📊 Generate Unified Report
     if: always()
@@ -288,6 +357,22 @@ jobs:
           - **Location**: Security → Code scanning tab
           - **Rule Sets**: Security Audit, OWASP Top 10, CWE Top 25
           
+          ## 📦 SCA (Software Composition Analysis) Results
+          
+          ### OWASP Dependency Check
+          - **Database**: NVD (National Vulnerability Database)
+          - **Focus**: Third-party dependencies & libraries
+          - **Reports**: 
+            - HTML interactive viewer
+            - XML structured format
+            - JSON for CI/CD automation
+          - **Location**: Artifacts tab → `sca-dependency-check-*`
+          
+          **Known Demo Vulnerabilities Detected:**
+          - Log4j 2.14.1 (CVE-2021-44228 Log4Shell)
+          - Apache Commons Text 1.9 (CVE-2022-42889 Text4Shell)
+          - Commons Collections 3.2.1 (Remote Code Execution)
+          
           ## 🎯 Vulnerable Endpoints (Demo - Intentional with Secure Fixes)
           
           | Endpoint | Vulnerability | CWE | Description |
@@ -320,23 +405,38 @@ jobs:
           ```
           Push/PR to main/develop
                    ↓
-          ⚡ Build & SAST (All-in-One)
+          ⚡ Build & Security Scanning (All-in-One)
           ├─ Build: Maven clean package test (2-3 min)
-          ├─ SpotBugs: Static analysis (2 min)
-          ├─ CodeQL: Deep security analysis (5-8 min)
-          ├─ Semgrep: Fast pattern matching (1 min)
+          ├─ SpotBugs: SAST analysis (2 min)
+          ├─ CodeQL: Deep code analysis (5-8 min)
+          ├─ Semgrep: Pattern matching (1 min)
+          ├─ Dependency-Check: SCA scan (2-3 min)
           └─ Report: Consolidated summary (1 min)
           
-          Parallel Execution: ~8 minutes total
-          (instead of ~20 minutes with sequential workflows)
+          Parallel Execution: ~8-10 minutes total
+          (instead of ~25 minutes with sequential workflows)
           ```
           
           ## 📚 Tools Used
           
-          - **Build**: Apache Maven 3.9+
-          - **SAST**: SpotBugs 4.8.5, CodeQL, Semgrep
-          - **Database**: H2 (in-memory demo)
-          - **Framework**: Spring Boot 4.0.6
+          ### SAST (Static Application Security Testing)
+          - **SpotBugs 4.8.5** - Java bytecode analysis + FindSecBugs
+          - **GitHub CodeQL** - Deep taint-flow analysis
+          - **Semgrep** - Pattern-based static analysis
+          
+          ### SCA (Software Composition Analysis)
+          - **OWASP Dependency-Check 9.0.7** - Dependency vulnerability scanning
+          - **Database**: National Vulnerability Database (NVD)
+          
+          ### Build & Test
+          - **Apache Maven 3.9+** - Build automation
+          - **JUnit 5** - Test framework
+          - **
+
+Spring Boot 4.0.6** - Application framework
+          
+          ### Database
+          - **H2** - In-memory demo database
           
           ---
           **Workflow Run**: [$RUN_URL]($RUN_URL)

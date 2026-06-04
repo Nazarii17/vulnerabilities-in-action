@@ -179,6 +179,29 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- OWASP Dependency-Check Maven Plugin for SCA (Software Composition Analysis) -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.7</version>
+                <configuration>
+                    <format>ALL</format>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <failBuildOnCVSS>0</failBuildOnCVSS>
+                    <skip>false</skip>
+                    <enableExperimental>true</enableExperimental>
+                    <enableRetired>true</enableRetired>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

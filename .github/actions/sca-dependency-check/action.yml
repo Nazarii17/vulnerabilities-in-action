@@ -1,0 +1,58 @@
+name: SCA - OWASP Dependency Check
+description: 'Runs OWASP Dependency Check for software composition analysis'
+
+inputs:
+  project-dir:
+    description: 'Project directory'
+    required: false
+    default: 'via-backend'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run OWASP Dependency Check
+      shell: bash
+      run: |
+        cd ${{ inputs.project-dir }}
+        mvn dependency-check:check
+      continue-on-error: true
+
+    - name: Debug - Check generated files
+      if: always()
+      shell: bash
+      run: |
+        echo "=== Checking for Dependency Check output files ==="
+        cd ${{ inputs.project-dir }}/target
+        ls -lh . | grep -iE "dependency|report" || echo "No dependency-check files found yet"
+        find . -name "*dependency*" -o -name "*check*" 2>/dev/null || echo "No files found in find"
+        echo ""
+        echo "=== Checking for HTML/XML reports ==="
+        find . -maxdepth 1 \( -name "*.html" -o -name "*.xml" \) 2>/dev/null | grep -v spotbugs || echo "No SCA reports found"
+
+    - name: Upload Dependency Check HTML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: sca-dependency-check-html
+        path: ${{ inputs.project-dir }}/target/dependency-check-report.html
+        retention-days: 30
+        if-no-files-found: warn
+
+    - name: Upload Dependency Check XML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: sca-dependency-check-xml
+        path: ${{ inputs.project-dir }}/target/dependency-check-report.xml
+        retention-days: 30
+        if-no-files-found: warn
+
+    - name: Upload Dependency Check JSON Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: sca-dependency-check-json
+        path: ${{ inputs.project-dir }}/target/dependency-check-report.json
+        retention-days: 30
+        if-no-files-found: warn
+
