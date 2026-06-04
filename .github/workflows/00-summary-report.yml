@@ -47,26 +47,29 @@ jobs:
           mvn clean compile spotbugs:spotbugs 2>/dev/null || true
         fi
         
+        # Set defaults
+        SPOTBUGS_TOTAL=0
+        SPOTBUGS_HIGH=0
+        SPOTBUGS_MEDIUM=0
+        SPOTBUGS_LOW=0
+        SPOTBUGS_CRITICAL=0
+        
         if [ -f target/spotbugsXml.xml ]; then
           # Count issues from XML report
-          SPOTBUGS_TOTAL=$(grep -c "<BugInstance" target/spotbugsXml.xml 2>/dev/null || echo "0")
-          SPOTBUGS_HIGH=$(grep -c "priority='1'" target/spotbugsXml.xml 2>/dev/null || echo "0")
-          SPOTBUGS_MEDIUM=$(grep -c "priority='2'" target/spotbugsXml.xml 2>/dev/null || echo "0")
-          SPOTBUGS_LOW=$(grep -c "priority='3'" target/spotbugsXml.xml 2>/dev/null || echo "0")
+          SPOTBUGS_TOTAL=$(grep -c "<BugInstance" target/spotbugsXml.xml 2>/dev/null) || SPOTBUGS_TOTAL=0
+          SPOTBUGS_HIGH=$(grep -c "priority='1'" target/spotbugsXml.xml 2>/dev/null) || SPOTBUGS_HIGH=0
+          SPOTBUGS_MEDIUM=$(grep -c "priority='2'" target/spotbugsXml.xml 2>/dev/null) || SPOTBUGS_MEDIUM=0
+          SPOTBUGS_LOW=$(grep -c "priority='3'" target/spotbugsXml.xml 2>/dev/null) || SPOTBUGS_LOW=0
           SPOTBUGS_CRITICAL=$SPOTBUGS_HIGH
-          
-          echo "SPOTBUGS_TOTAL=$SPOTBUGS_TOTAL" >> $GITHUB_ENV
-          echo "SPOTBUGS_HIGH=$SPOTBUGS_HIGH" >> $GITHUB_ENV
-          echo "SPOTBUGS_MEDIUM=$SPOTBUGS_MEDIUM" >> $GITHUB_ENV
-          echo "SPOTBUGS_LOW=$SPOTBUGS_LOW" >> $GITHUB_ENV
-          echo "SPOTBUGS_CRITICAL=$SPOTBUGS_CRITICAL" >> $GITHUB_ENV
-        else
-          echo "SPOTBUGS_TOTAL=0" >> $GITHUB_ENV
-          echo "SPOTBUGS_HIGH=0" >> $GITHUB_ENV
-          echo "SPOTBUGS_MEDIUM=0" >> $GITHUB_ENV
-          echo "SPOTBUGS_LOW=0" >> $GITHUB_ENV
-          echo "SPOTBUGS_CRITICAL=0" >> $GITHUB_ENV
         fi
+        
+        {
+          echo "SPOTBUGS_TOTAL=$SPOTBUGS_TOTAL"
+          echo "SPOTBUGS_HIGH=$SPOTBUGS_HIGH"
+          echo "SPOTBUGS_MEDIUM=$SPOTBUGS_MEDIUM"
+          echo "SPOTBUGS_LOW=$SPOTBUGS_LOW"
+          echo "SPOTBUGS_CRITICAL=$SPOTBUGS_CRITICAL"
+        } >> "$GITHUB_ENV"
 
     # ========== TEST RESULTS PARSER ==========
     - name: Parse Test Results
@@ -74,20 +77,25 @@ jobs:
       run: |
         cd via-backend
         
-        if [ -d target/surefire-reports ] && [ -f target/surefire-reports/TEST-*.xml ]; then
-          TESTS_TOTAL=$(grep -l "tests=" target/surefire-reports/TEST-*.xml 2>/dev/null | wc -l || echo "0")
-          if [ "$TESTS_TOTAL" -gt 0 ]; then
-            # Simply mark as having tests
-            echo "TESTS_TOTAL=$TESTS_TOTAL" >> $GITHUB_ENV
-          else
-            echo "TESTS_TOTAL=0" >> $GITHUB_ENV
+        # Set defaults
+        TESTS_TOTAL=0
+        TESTS_PASSED=0
+        TESTS_FAILED=0
+        TESTS_SKIPPED=0
+        
+        if [ -d target/surefire-reports ]; then
+          TEST_COUNT=$(find target/surefire-reports -name 'TEST-*.xml' 2>/dev/null | wc -l)
+          if [ "$TEST_COUNT" -gt 0 ]; then
+            TESTS_TOTAL=$TEST_COUNT
           fi
-        else
-          echo "TESTS_TOTAL=0" >> $GITHUB_ENV
-          echo "TESTS_PASSED=0" >> $GITHUB_ENV
-          echo "TESTS_FAILED=0" >> $GITHUB_ENV
-          echo "TESTS_SKIPPED=0" >> $GITHUB_ENV
         fi
+        
+        {
+          echo "TESTS_TOTAL=$TESTS_TOTAL"
+          echo "TESTS_PASSED=$TESTS_PASSED"
+          echo "TESTS_FAILED=$TESTS_FAILED"
+          echo "TESTS_SKIPPED=$TESTS_SKIPPED"
+        } >> "$GITHUB_ENV"
 
     # ========== FINAL SUMMARY REPORT ==========
     - name: Generate Unified Report
