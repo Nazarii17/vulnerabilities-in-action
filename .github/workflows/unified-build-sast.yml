@@ -431,9 +431,7 @@ jobs:
           ### Build & Test
           - **Apache Maven 3.9+** - Build automation
           - **JUnit 5** - Test framework
-          - **
-
-Spring Boot 4.0.6** - Application framework
+          - **Spring Boot 4.0.6** - Application framework
           
           ### Database
           - **H2** - In-memory demo database
