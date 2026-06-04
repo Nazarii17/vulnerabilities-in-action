@@ -21,14 +21,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Semgrep
-        uses: semgrep/action@v1
-        with:
-          generateSarif: true
-          config: >-
-            p/security-audit
-            p/owasp-top-ten
-            p/cwe-top-25
-            p/java
+        run: |
+          python -m pip install semgrep
+          semgrep scan \
+            --sarif --output semgrep.sarif \
+            --config "p/security-audit" \
+            --config "p/owasp-top-ten" \
+            --config "p/cwe-top-25" \
+            --config "p/java" \
+            via-backend/src
         env:
           SEMGREP_APP_TOKEN: ""
 
