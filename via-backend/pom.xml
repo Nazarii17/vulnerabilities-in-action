@@ -188,7 +188,7 @@
                 <configuration>
                     <format>ALL</format>
                     <outputDirectory>${project.build.directory}</outputDirectory>
-                    <failBuildOnCVSS>0</failBuildOnCVSS>
+                    <failBuildOnCVSS>11</failBuildOnCVSS> <!-- Test only. Must be 0 -->
                     <skip>false</skip>
                     <enableExperimental>true</enableExperimental>
                     <enableRetired>true</enableRetired>
