@@ -1,0 +1,70 @@
+name: 04 - SAST (Semgrep)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Weekly scan on Monday at 3 AM UTC
+    - cron: '0 3 * * 1'
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Semgrep
+      uses: returntocorp/semgrep-action@v1
+      with:
+        generateSarif: true
+        generateJson: true
+        config: >-
+          p/security-audit
+          p/owasp-top-ten
+          p/cwe-top-25
+          p/java
+        scanDirFilter: via-backend/src
+
+    - name: Upload SARIF file
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: semgrep.sarif
+        category: Semgrep
+
+    - name: Upload JSON report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: semgrep-report-json
+        path: semgrep.json
+        retention-days: 30
+        if-no-files-found: warn
+
+    - name: Summary - Semgrep Results
+      if: always()
+      run: |
+        echo "## 🔍 Semgrep SAST Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tool**: Semgrep (free, open-source)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Language**: Java" >> $GITHUB_STEP_SUMMARY
+        echo "- **Rule Sets**: Security Audit, OWASP Top 10, CWE Top 25" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Report Formats" >> $GITHUB_STEP_SUMMARY
+        echo "- **SARIF**: Uploaded to GitHub Security → Code scanning" >> $GITHUB_STEP_SUMMARY
+        echo "- **JSON**: Available in Artifacts for detailed analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### How to View Results" >> $GITHUB_STEP_SUMMARY
+        echo "1. **GitHub Security Tab**: Repository → Security → Code scanning" >> $GITHUB_STEP_SUMMARY
+        echo "2. **Artifacts**: Download semgrep-report-json for detailed findings" >> $GITHUB_STEP_SUMMARY
+        echo "3. **Workflow Logs**: Check logs for detailed output" >> $GITHUB_STEP_SUMMARY
+
