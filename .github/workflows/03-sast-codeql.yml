@@ -1,0 +1,71 @@
+name: 03 - SAST (GitHub CodeQL)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Weekly scan on Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+
+jobs:
+  codeql-scan:
+    runs-on: ubuntu-latest
+
+    # Required for CodeQL to upload results to GitHub Security tab
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # Optional: disable default queries and use custom ones
+        queries: security-and-quality
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build Java project
+      run: cd via-backend && mvn clean compile -DskipTests
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: /language:java
+
+    - name: Summary - CodeQL Results
+      if: always()
+      run: |
+        echo "## 🔐 CodeQL SAST Analysis Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tool**: GitHub Advanced Security - CodeQL" >> $GITHUB_STEP_SUMMARY
+        echo "- **Language**: Java" >> $GITHUB_STEP_SUMMARY
+        echo "- **Query Suite**: security-and-quality" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Report Location" >> $GITHUB_STEP_SUMMARY
+        echo "- **GitHub Security Tab**: Can be found at \`/security/code-scanning\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **SARIF Format**: Automatically uploaded to GitHub" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### How to View Results" >> $GITHUB_STEP_SUMMARY
+        echo "1. Go to repository **Security** tab" >> $GITHUB_STEP_SUMMARY
+        echo "2. Click **Code scanning** (left sidebar)" >> $GITHUB_STEP_SUMMARY
+        echo "3. View alerts by severity (Critical, High, Medium, Low)" >> $GITHUB_STEP_SUMMARY
+        echo "4. Each alert links to the vulnerable code with fix suggestions" >> $GITHUB_STEP_SUMMARY
+
