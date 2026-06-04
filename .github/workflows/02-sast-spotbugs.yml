@@ -22,27 +22,37 @@ jobs:
         cache: maven
 
     - name: Run SpotBugs with FindSecBugs
-      run: cd via-backend && mvn clean verify spotbugs:spotbugs
+      run: cd via-backend && mvn clean compile spotbugs:spotbugs
       continue-on-error: true
 
-    - name: Generate HTML Report
+    - name: Debug - Check generated files
       if: always()
       run: |
-        cd via-backend
-        if [ -f target/spotbugsXml.xml ]; then
-          echo "✓ SpotBugs XML report found"
-          ls -lh target/spotbugsXml.xml
-        else
-          echo "⚠ No SpotBugs XML report generated"
-        fi
+        echo "=== Checking for SpotBugs report files ==="
+        cd via-backend/target
+        ls -lh . | grep -i spot || echo "No spotbugs files found"
+        find . -name "*spotbugs*" -o -name "*spot*" 2>/dev/null || echo "No spotbugs files in find"
+        echo ""
+        echo "=== Full target directory listing ==="
+        ls -la
 
-    - name: Upload SpotBugs Report
+    - name: Upload SpotBugs XML Report
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: spotbugs-report
+        name: spotbugs-report-xml
         path: via-backend/target/spotbugsXml.xml
         retention-days: 30
+        if-no-files-found: warn
+
+    - name: Upload SpotBugs HTML Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: spotbugs-report-html
+        path: via-backend/target/spotbugs.html
+        retention-days: 30
+        if-no-files-found: warn
 
     - name: Summary - SAST Scan Results
       if: always()

@@ -158,24 +158,27 @@
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.8.5.0</version>
-                <configuration>
+                <dependencies>
                     <!-- Include FindSecBugs plugin for security checks -->
-                    <plugins>
-                        <plugin>
-                            <groupId>com.h3xstream.findsecbugs</groupId>
-                            <artifactId>findsecbugs-plugin</artifactId>
-                            <version>1.13.0</version>
-                        </plugin>
-                    </plugins>
-                    <!-- Generate HTML report -->
+                    <dependency>
+                        <groupId>com.h3xstream.findsecbugs</groupId>
+                        <artifactId>findsecbugs-plugin</artifactId>
+                        <version>1.13.0</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <!-- Analysis parameters -->
                     <effort>max</effort>
                     <threshold>medium</threshold>
-                    <outputDirectory>target/spotbugs</outputDirectory>
                     <outputEncoding>UTF-8</outputEncoding>
+                    <!-- Generate XML and HTML reports -->
+                    <xmlOutput>true</xmlOutput>
+                    <htmlOutput>true</htmlOutput>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
                 </configuration>
                 <executions>
                     <execution>
-                        <phase>verify</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>spotbugs</goal>
                         </goals>
