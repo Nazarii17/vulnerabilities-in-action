@@ -198,6 +198,8 @@ jobs:
         uses: ./.github/actions/sca-dependency-check
         with:
           project-dir: 'via-backend'
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
 
       - name: SCA Summary
         if: always()
