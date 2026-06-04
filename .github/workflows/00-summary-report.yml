@@ -48,38 +48,18 @@ jobs:
         fi
         
         if [ -f target/spotbugsXml.xml ]; then
-          # Use Python to parse XML properly
-          python3 << 'PYTHON_SCRIPT'
-import xml.etree.ElementTree as ET
-import sys
-
-try:
-  tree = ET.parse('target/spotbugsXml.xml')
-  root = tree.getroot()
-  
-  # Count by priority (HIGH=1, MEDIUM=2, LOW=3)
-  priority_1 = len(root.findall(".//BugInstance[@priority='1']"))  # HIGH
-  priority_2 = len(root.findall(".//BugInstance[@priority='2']"))  # MEDIUM
-  priority_3 = len(root.findall(".//BugInstance[@priority='3']"))  # LOW
-  total = priority_1 + priority_2 + priority_3
-
-  with open(os.environ.get('GITHUB_ENV', '/dev/null'), 'a') as f:
-    f.write(f"SPOTBUGS_CRITICAL={priority_1}\n")
-    f.write(f"SPOTBUGS_HIGH={priority_1}\n")
-    f.write(f"SPOTBUGS_MEDIUM={priority_2}\n")
-    f.write(f"SPOTBUGS_LOW={priority_3}\n")
-    f.write(f"SPOTBUGS_TOTAL={total}\n")
-
-except Exception as e:
-  print(f"Error parsing SpotBugs XML: {e}")
-  with open(os.environ.get('GITHUB_ENV', '/dev/null'), 'a') as f:
-    f.write("SPOTBUGS_CRITICAL=0\n")
-    f.write("SPOTBUGS_HIGH=0\n")
-    f.write("SPOTBUGS_MEDIUM=0\n")
-    f.write("SPOTBUGS_LOW=0\n")
-    f.write("SPOTBUGS_TOTAL=0\n")
-PYTHON_SCRIPT
-        
+          # Count issues from XML report
+          SPOTBUGS_TOTAL=$(grep -c "<BugInstance" target/spotbugsXml.xml 2>/dev/null || echo "0")
+          SPOTBUGS_HIGH=$(grep -c "priority='1'" target/spotbugsXml.xml 2>/dev/null || echo "0")
+          SPOTBUGS_MEDIUM=$(grep -c "priority='2'" target/spotbugsXml.xml 2>/dev/null || echo "0")
+          SPOTBUGS_LOW=$(grep -c "priority='3'" target/spotbugsXml.xml 2>/dev/null || echo "0")
+          SPOTBUGS_CRITICAL=$SPOTBUGS_HIGH
+          
+          echo "SPOTBUGS_TOTAL=$SPOTBUGS_TOTAL" >> $GITHUB_ENV
+          echo "SPOTBUGS_HIGH=$SPOTBUGS_HIGH" >> $GITHUB_ENV
+          echo "SPOTBUGS_MEDIUM=$SPOTBUGS_MEDIUM" >> $GITHUB_ENV
+          echo "SPOTBUGS_LOW=$SPOTBUGS_LOW" >> $GITHUB_ENV
+          echo "SPOTBUGS_CRITICAL=$SPOTBUGS_CRITICAL" >> $GITHUB_ENV
         else
           echo "SPOTBUGS_TOTAL=0" >> $GITHUB_ENV
           echo "SPOTBUGS_HIGH=0" >> $GITHUB_ENV
@@ -94,62 +74,14 @@ PYTHON_SCRIPT
       run: |
         cd via-backend
         
-        if [ -f target/surefire-reports/testng-results.xml ] || [ -f target/surefire-reports/*.xml ]; then
-          python3 << 'PYTHON_SCRIPT'
-import xml.etree.ElementTree as ET
-import glob
-import os
-
-try:
-  # Find test report
-  test_files = glob.glob('target/surefire-reports/TEST-*.xml')
-
-  if test_files:
-    total_tests = 0
-    total_failures = 0
-    total_skipped = 0
-    total_time = 0.0
-
-    for test_file in test_files:
-      tree = ET.parse(test_file)
-      root = tree.getroot()
-      
-      tests = int(root.get('tests', 0))
-      failures = int(root.get('failures', 0))
-      skipped = int(root.get('skipped', 0))
-      time_val = float(root.get('time', 0))
-      
-      total_tests += tests
-      total_failures += failures
-      total_skipped += skipped
-      total_time += time_val
-
-    passed = total_tests - total_failures - total_skipped
-
-    with open(os.environ.get('GITHUB_ENV', '/dev/null'), 'a') as f:
-      f.write(f"TESTS_TOTAL={total_tests}\n")
-      f.write(f"TESTS_PASSED={passed}\n")
-      f.write(f"TESTS_FAILED={total_failures}\n")
-      f.write(f"TESTS_SKIPPED={total_skipped}\n")
-      f.write(f"TESTS_TIME={total_time:.2f}s\n")
-
-      if total_tests > 0:
-        pass_rate = (passed / total_tests) * 100
-        f.write(f"TESTS_PASS_RATE={pass_rate:.1f}%\n")
-
-  else:
-    with open(os.environ.get('GITHUB_ENV', '/dev/null'), 'a') as f:
-      f.write("TESTS_TOTAL=0\n")
-      f.write("TESTS_PASSED=0\n")
-      f.write("TESTS_FAILED=0\n")
-      f.write("TESTS_SKIPPED=0\n")
-
-except Exception as e:
-  print(f"Error parsing test results: {e}")
-  with open(os.environ.get('GITHUB_ENV', '/dev/null'), 'a') as f:
-    f.write("TESTS_TOTAL=0\n")
-PYTHON_SCRIPT
-        
+        if [ -d target/surefire-reports ] && [ -f target/surefire-reports/TEST-*.xml ]; then
+          TESTS_TOTAL=$(grep -l "tests=" target/surefire-reports/TEST-*.xml 2>/dev/null | wc -l || echo "0")
+          if [ "$TESTS_TOTAL" -gt 0 ]; then
+            # Simply mark as having tests
+            echo "TESTS_TOTAL=$TESTS_TOTAL" >> $GITHUB_ENV
+          else
+            echo "TESTS_TOTAL=0" >> $GITHUB_ENV
+          fi
         else
           echo "TESTS_TOTAL=0" >> $GITHUB_ENV
           echo "TESTS_PASSED=0" >> $GITHUB_ENV
