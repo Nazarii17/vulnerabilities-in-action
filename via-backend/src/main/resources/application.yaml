@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: via-backend
+
+  datasource:
+    url: jdbc:h2:mem:demodb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:db/data.sql
+      schema-locations: classpath:db/schema.sql
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.ntj: DEBUG
+
+# ==============================================================
+# ACTUATOR CONFIGURATION
+# ==============================================================
+#
+# ⚠️  VULNERABLE (current — active below):
+#     ALL endpoints exposed on the same public port.
+#     An attacker can access:
+#       /actuator/env        → dumps all env vars including secrets
+#       /actuator/heapdump   → full JVM heap dump (contains passwords, tokens)
+#       /actuator/loggers    → change log levels at runtime
+#       /actuator/beans      → full Spring context internals
+#       /actuator/mappings   → all URL routes (attacker reconnaissance)
+#
+# ✅  FIXED (commented out — swap these blocks to harden):
+#     Only 'health' exposed. Management on a separate internal-only port.
+#     External traffic never reaches sensitive endpoints.
+#
+# management:
+#   endpoints:
+#     web:
+#       exposure:
+#         include: "health"          # ✅ only safe liveness endpoint
+#   endpoint:
+#     health:
+#       show-details: never          # ✅ no internal details to anonymous callers
+#   server:
+#     port: 8081                     # ✅ separate port — firewalled from public internet
+# ==============================================================
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"                 # ❌ VULNERABLE: exposes ALL actuator endpoints
+  endpoint:
+    health:
+      show-details: always           # ❌ VULNERABLE: full health details to anyone
+    env:
+      show-values: always            # ❌ VULNERABLE: environment variable values visible
+    heapdump:
+      enabled: true                  # ❌ VULNERABLE
+  # No separate management port    # ❌ VULNERABLE: runs on same public port 8080
