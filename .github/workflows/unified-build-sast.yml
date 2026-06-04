@@ -276,6 +276,45 @@ jobs:
           echo "- ✅ License compliance issues" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Supply chain risks" >> $GITHUB_STEP_SUMMARY
 
+  # ============ SNYK SCA SCANNING ============
+  snyk-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    name: 🐶 SCA - Snyk
+
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java & Maven
+        uses: ./.github/actions/setup-java-maven
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/maven@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --sarif-file-output=snyk.sarif --all-projects
+
+      - name: Upload Snyk report to GitHub Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: snyk.sarif
+          category: Snyk
+
+      - name: Snyk Summary
+        if: always()
+        run: |
+          echo "## 🐶 Snyk SCA Analysis Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tool**: Snyk Open Source" >> $GITHUB_STEP_SUMMARY
+          echo "- **Speed**: ⚡ Ultra-fast (Cloud-based resolution)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Report**: SARIF generated and uploaded to GitHub Security Tab" >> $GITHUB_STEP_SUMMARY
   # ============ UNIFIED REPORT ============
   generate-report:
     needs: [build, spotbugs-scan, codeql-scan, semgrep-scan, sca-scan]
